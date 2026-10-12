@@ -3,7 +3,6 @@ name: CLOTTIS Teams Web — Production
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -80,6 +79,6 @@ jobs:
         run: |
           set -eu
           scp -o StrictHostKeyChecking=yes web.tar "$SSH_USER@$SSH_HOST:/tmp/clottis-teams-web-$SHA.tar"
-          ssh -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "set -eu; test -x /opt/clottis-teams/deploy-web.sh; docker load -i /tmp/clottis-teams-web-$SHA.tar; rm /tmp/clottis-teams-web-$SHA.tar; /opt/clottis-teams/deploy-web.sh 'clottis-teams-web:$SHA'"
+          ssh -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "set -eu; test -x /home/dev/clottis-teams/deployment/deploy-web.sh; docker load -i /tmp/clottis-teams-web-$SHA.tar; rm /tmp/clottis-teams-web-$SHA.tar; /opt/clottis-teams/deploy-web.sh 'clottis-teams-web:$SHA'"
       - name: Verify public frontend
         run: curl --fail --show-error --retry 5 --retry-delay 5 https://team.clottis.net/api/health
