@@ -1,0 +1,85 @@
+name: CLOTTIS Teams Web — Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clottis-teams-web-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://team.clottis.net/api/v1
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://team.clottis.net/api/v1
+          tags: clottis-teams-web:${{ github.sha }}
+          outputs: type=docker,dest=${{ runner.temp }}/web.tar
+          cache-from: type=gha,scope=clottis-teams-web
+          cache-to: type=gha,mode=max,scope=clottis-teams-web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clottis-teams-web-image
+          path: ${{ runner.temp }}/web.tar
+          retention-days: 1
+
+  deploy:
+    if: ${{ vars.ENABLE_PRODUCTION_DEPLOY == 'true' }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: clottis-teams-web-image
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          : "${SSH_PRIVATE_KEY:?Missing SSH_PRIVATE_KEY}" "${SSH_HOST:?Missing SSH_HOST}" "${SSH_USER:?Missing SSH_USER}" "${SSH_KNOWN_HOSTS:?Missing SSH_KNOWN_HOSTS}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Transfer and deploy image
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          scp -o StrictHostKeyChecking=yes web.tar "$SSH_USER@$SSH_HOST:/tmp/clottis-teams-web-$SHA.tar"
+          ssh -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" "docker load -i /tmp/clottis-teams-web-$SHA.tar && rm /tmp/clottis-teams-web-$SHA.tar && docker rm -f clottis-teams-web 2>/dev/null || true; docker run -d --name clottis-teams-web --restart unless-stopped -p 127.0.0.1:3002:3000 clottis-teams-web:$SHA"
+      - name: Verify public frontend
+        run: curl --fail --show-error --retry 5 --retry-delay 5 https://team.clottis.net/api/health
