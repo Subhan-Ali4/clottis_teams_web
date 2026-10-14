@@ -21,7 +21,8 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run lint
+      # Keep the standalone Vite/Express auth slice out of the root Next.js lint pass.
+      - run: npm run lint -- --ignore-pattern 'auth-slice/**'
       - run: npm run typecheck
       - run: npm run build
         env:
