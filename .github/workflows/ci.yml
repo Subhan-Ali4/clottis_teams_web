@@ -1,20 +1,62 @@
-name: Web CI
+name: CLOTTIS Teams Web CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, development]
   pull_request:
+    branches: [main, development]
+
+permissions:
+  contents: read
 
 jobs:
-  verify:
+  existing-nextjs-app:
+    name: Verify existing Next.js app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22.13'
           cache: npm
+          cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run lint
+      # Keep the standalone Vite/Express auth slice out of the root Next.js lint pass.
+      - run: npm run lint -- --ignore-pattern 'auth-slice/**'
       - run: npm run typecheck
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://team.clottis.net/api/v1
+
+  auth-backend:
+    name: Test authentication API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-slice/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13'
+          cache: npm
+          cache-dependency-path: auth-slice/backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  auth-frontend:
+    name: Test and build authentication UI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-slice/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13'
+          cache: npm
+          cache-dependency-path: auth-slice/frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
       - run: npm run build
