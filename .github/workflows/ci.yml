@@ -20,7 +20,9 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: package-lock.json
-      - name: Regenerate lockfile from package.json\n        run: npm install --package-lock-only --ignore-scripts\n      - run: npm ci
+      - name: Regenerate lockfile from package.json\n        run: npm install --package-lock-only --ignore-scripts\n      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
+      - run: npm ci
       - run: npm run lint -- --ignore-pattern 'auth-slice/**'
       - run: npm run typecheck
       - run: npm run build
@@ -40,6 +42,8 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: auth-slice/backend/package-lock.json
+      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
       - run: npm test
 
@@ -56,6 +60,8 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: auth-slice/frontend/package-lock.json
+      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
       - run: npm test
       - run: npm run build
@@ -70,6 +76,8 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: package-lock.json
+      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
       - run: npm run cf-build
       - run: npx opennextjs-cloudflare preview
