@@ -63,7 +63,7 @@ jobs:
       - run: npm run build
 
   cloudflare-opennext:
-    name: Build and preview Cloudflare Worker (no production deploy)
+    name: Build Cloudflare Worker (no preview server or production deploy)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,4 +76,3 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
       - run: npm run cf-build
-      - run: npx opennextjs-cloudflare preview
