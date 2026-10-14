@@ -6,6 +6,7 @@ on:
       - fix/cloudflare-opennext-preview
     paths:
       - package.json
+      - .github/workflows/ci.yml
       - .github/workflows/refresh-cloudflare-lock.yml
 
 permissions:
