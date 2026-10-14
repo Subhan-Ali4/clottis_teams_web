@@ -8,7 +8,7 @@ import { hashPassword } from '../src/security.js';
 const OWNER = { name: 'Olivia Owner', email: 'owner@example.com', password: 'owner-password-1' };
 
 function setup() {
-  const db = openDb(':memory:');
+  const db = openDb(':memory:', { seedDemo: false });
   const app = createApp(db);
   const seed = (name, email, role, password) =>
     db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)')
