@@ -20,7 +20,7 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm ci
+      - name: Regenerate lockfile from package.json\n        run: npm install --package-lock-only --ignore-scripts\n      - run: npm ci
       - run: npm run lint -- --ignore-pattern 'auth-slice/**'
       - run: npm run typecheck
       - run: npm run build
