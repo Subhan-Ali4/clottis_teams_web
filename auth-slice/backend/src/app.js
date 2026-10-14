@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import { loadSession, requireAuth, requireCustomHeader } from './middleware.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
+import { taskRoutes, projectRoutes, directoryRoutes } from './routes/tasks.js';
 
 export function createApp(db, { secureCookies = false } = {}) {
   const app = express();
@@ -14,6 +15,9 @@ export function createApp(db, { secureCookies = false } = {}) {
 
   app.use('/api/auth', authRoutes(db, { secureCookies }));
   app.use('/api/users', requireAuth, userRoutes(db));
+  app.use('/api/projects', requireAuth, projectRoutes(db));
+  app.use('/api/directory', requireAuth, directoryRoutes(db));
+  app.use('/api/tasks', requireAuth, taskRoutes(db));
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
@@ -24,6 +28,7 @@ export function createApp(db, { secureCookies = false } = {}) {
     if (status >= 500) console.error('Server error:', err.message);
     res.status(status).json({
       error: status >= 500 ? 'Something went wrong' : err.message,
+      ...(status < 500 ? err.body : {}),
     });
   });
 

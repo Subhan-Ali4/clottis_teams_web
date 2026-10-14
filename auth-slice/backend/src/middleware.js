@@ -12,9 +12,11 @@ export const toPublicUser = (u) => ({
   createdAt: u.created_at,
 });
 
-export function httpError(status, message) {
+// `body` adds extra JSON fields to the error response (e.g. field errors, the current record).
+export function httpError(status, message, body) {
   const e = new Error(message);
   e.status = status;
+  if (body) e.body = body;
   return e;
 }
 
