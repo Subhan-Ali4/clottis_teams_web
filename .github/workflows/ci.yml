@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, development, fix/cloudflare-opennext-preview]
   pull_request:
-    branches: [main, development]
+    branches: [main, development, deploy/auth-slice-containers]
 
 permissions:
   contents: read
