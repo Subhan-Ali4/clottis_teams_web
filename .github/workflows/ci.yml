@@ -2,9 +2,9 @@ name: CLOTTIS Teams Web CI
 
 on:
   push:
-    branches: [main, development]
+    branches: [main, development, fix/cloudflare-opennext-preview]
   pull_request:
-    branches: [main, development]
+    branches: [main, development, deploy/auth-slice-containers]
 
 permissions:
   contents: read
@@ -17,11 +17,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.13'
+          node-version: "22.13"
           cache: npm
           cache-dependency-path: package-lock.json
+      - name: Regenerate root lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
       - run: npm ci
-      # Keep the standalone Vite/Express auth slice out of the root Next.js lint pass.
       - run: npm run lint -- --ignore-pattern 'auth-slice/**'
       - run: npm run typecheck
       - run: npm run build
@@ -38,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.13'
+          node-version: "22.13"
           cache: npm
           cache-dependency-path: auth-slice/backend/package-lock.json
       - run: npm ci
@@ -54,9 +55,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.13'
+          node-version: "22.13"
           cache: npm
           cache-dependency-path: auth-slice/frontend/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run build
+
+  cloudflare-opennext:
+    name: Build Cloudflare Worker (no preview server or production deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Regenerate root lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts
+      - run: npm ci
+      - run: npm run cf-build
